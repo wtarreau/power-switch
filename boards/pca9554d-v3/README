@@ -1,0 +1,20 @@
+2024-10-06 - v3
+
+This is the 3rd version of the board using a PCA9554D (same pinout as
+PCF8574D which should also work).
+
+- open drain outputs using MOSFETs and 200 ohm resistors to protect
+  against short-circuits
+
+- GND placed left of output 0 instead of right of output 7
+
+Files in this directory:
+- bottom-copper = copper traces for components side (60 microns per pixel)
+- bottom-cream = solder mask for components side (60 microns per pixel)
+- pca9554d-3.sch = schematic (eagle 7.7 format)
+- pca9554d-3.brd = board (eagle 7.7 format)
+- schematic.png = rendered schematic
+
+Board files were rendered at 60 microns per pixel (423.33 DPI) for laser
+engraving or CNC etching but may also be printed for UV etching.
+
