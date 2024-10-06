@@ -11,6 +11,10 @@ USB-PD channels over I2C.
 ![PCA9554D-v2](photos/pca9554d-v2.jpg)
 ![PCA9554D-v3](photos/pca9554d-v3.jpg)
 
+The scripts/ directory contains a setup script, the "psw" script that's used to
+list the ports states and change them, and a sample "psw.conf" config file to
+map port numbers to GPIO numbers and descriptions.
+
 Possible variations
 ===================
 
@@ -19,4 +23,3 @@ the USB-PD boards. Other devices such as 74HC596 or TPIC6B595 offer
 open-drain variants of the ubiquitous 74HC595 that only requires 3
 signals to control 8 lines (clock, data, register clock), and can
 trivially be daisy-chained.
-

@@ -1,0 +1,107 @@
+#!/bin/bash
+
+CFG=/etc/psw/psw.conf
+nport=""
+
+usage() {
+	echo "Usage: $1 <args>"
+	echo "Without any argument, shows the ports states."
+	echo "Arguments:"
+	echo "  -h|--help                show this help"
+	echo "  <port_number> <on|off>   change the port state"
+	echo
+	echo "Ports are defined in $CFG with the following format:"
+	echo "<portnum> <gpionum> <desc>"
+	echo "  - portnum is a port number or identifier ('.' accepted)"
+	echo "  - gpionum is a GPIO number, prefixed with '-' if inverted"
+	echo "  - desc is the description of what is connected to that port"
+	echo
+}
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	usage "${0##*/}"
+	exit 0
+fi
+
+if [ -n "$1" -a -z "$2" ]; then
+	usage "${0##*/}"
+	exit 1
+fi
+
+# either empty (list) or both set
+nport=$1
+state=$2
+
+if [ -n "$nport" -a "$state" != "on" -a "$state" != "off" ]; then
+	usage "${0##*/}"
+	exit 1
+fi
+
+if [ ! -r "$CFG" ]; then
+	echo "Missing config file $CFG. Aborting. Call with -h for the format."
+	exit 1
+fi
+
+
+if [ -z "$nport" ]; then
+	# enumerate ports and their states
+
+	printf "Port  St  Desc\n"
+	while read port gpio desc; do
+		[ -n "${port##\#*}" ] || continue
+		num="${gpio#-}"
+		if [ ! -e /sys/class/gpio/gpio$num/direction ] ||
+		   [ "$(< /sys/class/gpio/gpio$num/direction)" != "out" ] ||
+		   [ "$(< /sys/class/gpio/gpio$num/value)" != "0" ]; then
+			state=1
+		else
+			state=0
+		fi
+
+		# deal with inversion
+		if [ "$gpio" != "$num" ]; then
+			state=$((1-state))
+		fi
+
+		if [ "$state" = 0 ]; then
+			state="--"
+		else
+			state="ON"
+		fi
+
+		printf "%4s %3s  %s\n" "$port" "$state" "$desc"
+	done < "$CFG"
+	exit 0
+fi
+
+# OK so we have a port ID and a valid state. Let's look up the GPIO number.
+if [ "$state" = "on" ]; then
+	state=1
+else
+	state=0
+fi
+
+ngpio=""
+while read port gpio desc; do
+	[ -n "${port##\#*}" ] || continue
+	[ "${port}" = "${nport}" ] || continue
+	ngpio=$gpio
+	break
+done < "$CFG"
+
+if [ -z "$ngpio" ]; then
+	echo "Port not found in $CFG"
+	exit 1
+fi
+
+num="${ngpio#-}"
+if [ "$ngpio" != "$num" ]; then
+	state=$((1-state))
+fi
+
+if [ ! -e /sys/class/gpio/gpio$num/value ]; then
+	echo "GPIO $num not exported. Were GPIO initialized?"
+	exit 1
+fi
+
+echo $state > /sys/class/gpio/gpio$num/value
